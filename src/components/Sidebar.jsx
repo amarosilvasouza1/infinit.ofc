@@ -4,7 +4,7 @@ import { FaSignOutAlt, FaUserEdit, FaCircle, FaSearch, FaUserPlus, FaCheck, FaTi
 import ProfileModal from './ProfileModal';
 import UserProfileModal from './UserProfileModal';
 import { db } from '../services/firebase';
-import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, arrayUnion, arrayRemove, getDocs, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, arrayUnion, arrayRemove, getDocs, orderBy, deleteDoc, collectionGroup } from 'firebase/firestore';
 import { compressImage } from '../utils/imageUtils';
 import StatusViewer from './StatusViewer';
 
@@ -70,6 +70,60 @@ const Sidebar = ({ onSelectUser }) => {
 
     return () => unsubscribe();
   }, [currentUser]);
+
+  // Unread Messages & Notifications
+  const [unreadMessages, setUnreadMessages] = useState([]);
+  const [notification, setNotification] = useState(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const q = query(
+      collectionGroup(db, 'chat'), 
+      where('to', '==', currentUser.uid),
+      where('read', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = [];
+      snapshot.forEach(doc => {
+        msgs.push({ id: doc.id, ...doc.data() });
+      });
+      setUnreadMessages(msgs);
+
+      // Handle Notifications for NEW messages
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          // Ignore local writes (latency compensation) to avoid double notification
+          if (!change.doc.metadata.hasPendingWrites) {
+             // Find sender name
+             const sender = users.find(u => u.uid === data.senderId);
+             if (sender) {
+               setNotification({
+                 text: data.text,
+                 senderName: sender.displayName,
+                 photoURL: sender.photoURL
+               });
+               // Clear notification after 4 seconds
+               setTimeout(() => setNotification(null), 4000);
+             }
+          }
+        }
+      });
+    }, (error) => {
+      console.error("Error fetching unread messages:", error);
+      if (error.code === 'failed-precondition') {
+        console.warn("Firestore Index Required: Check the console link to create the index for 'chat' collection group.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, users]);
+
+  const getUnreadCount = (uid) => {
+    return unreadMessages.filter(msg => msg.senderId === uid).length;
+  };
 
   // Fetch Statuses (Last 24h & Friends Only)
   useEffect(() => {
@@ -277,7 +331,17 @@ const Sidebar = ({ onSelectUser }) => {
                     <FaCircle size={10} color={user.isOnline ? "#2cb67d" : "#666"} style={{ position: 'absolute', bottom: 0, right: 0, border: '2px solid #16161a', borderRadius: '50%' }} />
                   </div>
                   <div onClick={() => onSelectUser(user)} style={{ flex: 1 }}>
-                    <h4 style={{ margin: 0 }}>{user.displayName}</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ margin: 0 }}>{user.displayName}</h4>
+                      {getUnreadCount(user.uid) > 0 && (
+                        <span style={{ 
+                          background: '#2cb67d', color: 'white', fontSize: '0.7rem', 
+                          padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' 
+                        }}>
+                          {getUnreadCount(user.uid)}
+                        </span>
+                      )}
+                    </div>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click to chat</p>
                   </div>
                 </div>
@@ -422,6 +486,31 @@ const Sidebar = ({ onSelectUser }) => {
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       <UserProfileModal user={selectedProfileUser} isOpen={!!selectedProfileUser} onClose={() => setSelectedProfileUser(null)} />
       {selectedStatus && <StatusViewer status={selectedStatus} onClose={() => setSelectedStatus(null)} />}
+      
+      {/* Notification Toast */}
+      {notification && (
+        <div style={{
+          position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+          background: 'rgba(26, 26, 46, 0.95)', backdropFilter: 'blur(10px)',
+          border: '1px solid var(--glass-border)', borderRadius: '12px',
+          padding: '15px', display: 'flex', alignItems: 'center', gap: '15px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          animation: 'slideIn 0.3s ease-out',
+          maxWidth: '300px'
+        }}>
+          <img 
+            src={notification.photoURL || 'https://via.placeholder.com/40'} 
+            alt={notification.senderName} 
+            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #2cb67d' }} 
+          />
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'white' }}>{notification.senderName}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+              {notification.text}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

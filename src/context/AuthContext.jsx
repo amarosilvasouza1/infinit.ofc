@@ -7,10 +7,11 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       displayName: username,
       email: email,
       photoURL: user.photoURL || "",
-      photoURL: user.photoURL || "",
+
       status: "online",
       isOnline: true,
       createdAt: new Date()

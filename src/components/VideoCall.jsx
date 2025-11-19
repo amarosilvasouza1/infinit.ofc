@@ -127,7 +127,7 @@ const VideoCall = ({ peer, callerId, callerUser, callType = 'video', incomingCal
       if (myVideoRef.current) myVideoRef.current.srcObject = mediaStream;
       
       const videoTrack = mediaStream.getVideoTracks()[0];
-      const sender = callInstance.current.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+      const sender = callRef.current.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
       if (sender) {
         sender.replaceTrack(videoTrack);
       }
@@ -140,7 +140,7 @@ const VideoCall = ({ peer, callerId, callerUser, callType = 'video', incomingCal
         if (myVideoRef.current) myVideoRef.current.srcObject = screenStream;
 
         const videoTrack = screenStream.getVideoTracks()[0];
-        const sender = callInstance.current.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+        const sender = callRef.current.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
         if (sender) {
           sender.replaceTrack(videoTrack);
         }

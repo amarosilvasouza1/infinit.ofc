@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { FaVideo, FaPhone, FaSmile, FaPaperPlane, FaCommentDots } from 'react-icons/fa';
 
 const Chat = ({ selectedUser, onStartCall }) => {
@@ -22,10 +22,28 @@ const Chat = ({ selectedUser, onStartCall }) => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let msgs = [];
+      const unreadIds = [];
+      
       snapshot.forEach((doc) => {
-        msgs.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        msgs.push({ id: doc.id, ...data });
+        
+        // Identify unread messages sent TO me
+        if (data.to === currentUser.uid && !data.read) {
+          unreadIds.push(doc.id);
+        }
       });
       setMessages(msgs);
+
+      // Mark unread messages as read
+      if (unreadIds.length > 0) {
+        const batch = writeBatch(db);
+        unreadIds.forEach(msgId => {
+          const msgRef = doc(db, "messages", id, "chat", msgId);
+          batch.update(msgRef, { read: true });
+        });
+        batch.commit().catch(err => console.error("Error marking messages as read:", err));
+      }
     });
 
     return () => unsubscribe();
@@ -47,6 +65,7 @@ const Chat = ({ selectedUser, onStartCall }) => {
       text: newMessage,
       senderId: currentUser.uid,
       to: selectedUser.uid,
+      read: false, // New field
       createdAt: new Date()
     });
 
