@@ -16,9 +16,15 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .app-container {
+    padding: 0;
+  }
+
   .main-content {
     flex-direction: column;
-    height: auto;
-    min-height: 90vh;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
   }
 }

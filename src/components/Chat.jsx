@@ -4,8 +4,9 @@ import { db } from '../services/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { FaVideo, FaPhone, FaSmile, FaPaperPlane, FaCommentDots } from 'react-icons/fa';
 
-const Chat = ({ selectedUser, onStartCall }) => {
+const Chat = ({ selectedUser, onStartCall, onBack, isMobile }) => {
   const { currentUser } = useAuth();
+  // ... existing state ...
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -73,11 +74,16 @@ const Chat = ({ selectedUser, onStartCall }) => {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', borderRadius: isMobile ? '0' : '0 24px 24px 0' }}>
       {selectedUser ? (
         <>
           <div style={{ padding: '20px 30px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              {isMobile && (
+                <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'white', marginRight: '10px', fontSize: '1.2rem' }}>
+                  ←
+                </button>
+              )}
               <div style={{ position: 'relative' }}>
                 <img 
                   src={selectedUser.photoURL || 'https://via.placeholder.com/50'} 
@@ -152,7 +158,7 @@ const Chat = ({ selectedUser, onStartCall }) => {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} style={{ padding: '25px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '15px', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+          <form onSubmit={handleSendMessage} style={{ padding: isMobile ? '15px' : '25px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '15px', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
             <button type="button" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}>
               <FaSmile />
             </button>

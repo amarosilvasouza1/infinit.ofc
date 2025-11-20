@@ -71,9 +71,9 @@ const ProfileModal = ({ isOpen, onClose }) => {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+      background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000
     }}>
-      <div className="glass" style={{ width: '500px', padding: '20px', position: 'relative', background: '#1a1a2e' }}>
+      <div className="glass" style={{ width: '90%', maxWidth: '500px', padding: '20px', position: 'relative', background: '#1a1a2e' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem' }}>
           <FaTimes />
         </button>

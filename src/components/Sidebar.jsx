@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FaSignOutAlt, FaUserEdit, FaCircle, FaSearch, FaUserPlus, FaCheck, FaTimes, FaCommentDots, FaCircleNotch, FaPlus, FaImage } from 'react-icons/fa';
 import ProfileModal from './ProfileModal';
@@ -8,8 +8,9 @@ import { collection, onSnapshot, query, where, addDoc, updateDoc, doc, arrayUnio
 import { compressImage } from '../utils/imageUtils';
 import StatusViewer from './StatusViewer';
 
-const Sidebar = ({ onSelectUser }) => {
+const Sidebar = ({ onSelectUser, isMobile }) => {
   const { currentUser, logout } = useAuth();
+  // ... existing state ...
   const [users, setUsers] = useState([]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chats'); // chats, search, requests, status
@@ -22,17 +23,11 @@ const Sidebar = ({ onSelectUser }) => {
   const [showStatusInput, setShowStatusInput] = useState(false);
   const [newStatusText, setNewStatusText] = useState('');
   const [newStatusImage, setNewStatusImage] = useState(null);
-  const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
 
-  // Keep selected user updated with real-time data
-  useEffect(() => {
-    if (selectedProfileUser) {
-      const updatedUser = users.find(u => u.uid === selectedProfileUser.uid);
-      if (updatedUser) {
-        setSelectedProfileUser(updatedUser);
-      }
-    }
-  }, [users]);
+  const selectedProfileUser = useMemo(() => {
+    return users.find(u => u.uid === selectedProfileUserId) || null;
+  }, [users, selectedProfileUserId]);
 
   // Fetch Users (Friends Only logic for Chats tab)
   useEffect(() => {
@@ -265,9 +260,16 @@ const Sidebar = ({ onSelectUser }) => {
   const uniqueStatuses = getUniqueUserStatuses();
 
   return (
-    <div className="glass" style={{ width: '350px', borderRight: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column' }}>
+    <div className="glass" style={{ 
+      width: isMobile ? '100%' : '350px', 
+      borderRight: isMobile ? 'none' : '1px solid var(--glass-border)', 
+      display: 'flex', 
+      flexDirection: 'column',
+      height: '100%',
+      borderRadius: isMobile ? '0' : '24px 0 0 24px'
+    }}>
       {/* Header */}
-      <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: isMobile ? '15px' : '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setIsProfileOpen(true)}>
           <img 
             src={currentUser?.photoURL || 'https://via.placeholder.com/50'} 
@@ -326,7 +328,7 @@ const Sidebar = ({ onSelectUser }) => {
                   key={user.uid} 
                   style={{ padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', transition: 'all 0.2s' }}
                 >
-                  <div style={{ position: 'relative' }} onClick={() => setSelectedProfileUser(user)}>
+                  <div style={{ position: 'relative' }} onClick={() => setSelectedProfileUserId(user.uid)}>
                     <img src={user.photoURL || 'https://via.placeholder.com/40'} alt={user.displayName} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }} />
                     <FaCircle size={10} color={user.isOnline ? "#2cb67d" : "#666"} style={{ position: 'absolute', bottom: 0, right: 0, border: '2px solid #16161a', borderRadius: '50%' }} />
                   </div>
@@ -484,7 +486,7 @@ const Sidebar = ({ onSelectUser }) => {
       </div>
 
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-      <UserProfileModal user={selectedProfileUser} isOpen={!!selectedProfileUser} onClose={() => setSelectedProfileUser(null)} />
+      <UserProfileModal user={selectedProfileUser} isOpen={!!selectedProfileUser} onClose={() => setSelectedProfileUserId(null)} />
       {selectedStatus && <StatusViewer status={selectedStatus} onClose={() => setSelectedStatus(null)} />}
       
       {/* Notification Toast */}
@@ -496,7 +498,8 @@ const Sidebar = ({ onSelectUser }) => {
           padding: '15px', display: 'flex', alignItems: 'center', gap: '15px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           animation: 'slideIn 0.3s ease-out',
-          maxWidth: '300px'
+          maxWidth: '300px',
+          ...(isMobile ? { top: '10px', left: '10px', right: '10px', maxWidth: 'none' } : {})
         }}>
           <img 
             src={notification.photoURL || 'https://via.placeholder.com/40'} 

@@ -144,17 +144,36 @@ const Home = () => {
     setIncomingCallUser(null);
   };
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="app-container">
       {/* Ringtone audio */}
       <audio ref={ringtoneRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBi..." />
       
       <div className="glass main-content">
-        <Sidebar onSelectUser={setSelectedUser} setIsProfileOpen={setIsProfileOpen} />
-        <Chat 
-          selectedUser={selectedUser} 
-          onStartCall={(type) => startCall(selectedUser, type)} 
-        />
+        {(!isMobile || !selectedUser) && (
+          <Sidebar 
+            onSelectUser={setSelectedUser} 
+            setIsProfileOpen={setIsProfileOpen} 
+            isMobile={isMobile}
+          />
+        )}
+        
+        {(!isMobile || selectedUser) && (
+          <Chat 
+            selectedUser={selectedUser} 
+            onStartCall={(type) => startCall(selectedUser, type)} 
+            onBack={() => setSelectedUser(null)}
+            isMobile={isMobile}
+          />
+        )}
       </div>
 
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
